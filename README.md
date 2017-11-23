@@ -1,6 +1,6 @@
 # HENGEX Lib
 
-High Enerdy Physics Tools 
+High Energy Physics Tools 
 
 # Building 
 ## Requirements
