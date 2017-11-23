@@ -2,7 +2,28 @@
 #Author Omar.Zapata@cern.ch 2017 CMS-UdeA
 
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
-project(HarryPlotter)
+project(HLib)
+
+
+file( WRITE  "${CMAKE_BINARY_DIR}/thishlib.sh" "")
+  
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "if [ -n \"$ROOT_LIBRARY_PATH\" ] ; then\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport ROOT_LIBRARY_PATH=$ROOT_LIBRARY_PATH:${CMAKE_BINARY_DIR}/\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "else\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport ROOT_LIBRARY_PATH=${CMAKE_BINARY_DIR}/\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "fi\n")
+ 
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "if [ -n \"$LD_LIBRARY_PATH\" ] ; then\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${CMAKE_BINARY_DIR}/\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "else\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "fi\n")
+   
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "if [ -n \"$ROOT_INCLUDE_PATH\" ] ; then\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport ROOT_INCLUDE_PATH=$ROOT_INCLUDE_PATH:${CMAKE_SOURCE_DIR}/include\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "else\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport ROOT_INCLUDE_PATH=${CMAKE_SOURCE_DIR}/include\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "fi\n")
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 
