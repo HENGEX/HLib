@@ -11,8 +11,8 @@ find_package(ROOT REQUIRED COMPONENTS RIO Gui Core Imt RIO Net Hist Graf Graf3d 
 #---Define useful ROOT functions and macros (e.g. ROOT_GENERATE_DICTIONARY)
 include(${ROOT_USE_FILE})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/interface)
-ROOT_GENERATE_DICTIONARY(G__HarryPlotter Plotter.h LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/interface/LinkDef.h)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+ROOT_GENERATE_DICTIONARY(G__HarryPlotter Plotter.h LINKDEF ${CMAKE_CURRENT_SOURCE_DIR}/include/LinkDef.h)
 
 #---Create a shared library with geneated dictionary
 add_library(HarryPlotter SHARED src/Plotter.cxx G__HarryPlotter.cxx)
