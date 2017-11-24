@@ -33,7 +33,7 @@ file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "fi\n")
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 
-find_package(ROOT REQUIRED COMPONENTS RIO Gui Core Imt RIO Net Hist Graf Graf3d Gpad Tree TreePlayer Rint Postscript Matrix Physics MathCore Thread MultiProc )
+find_package(ROOT REQUIRED COMPONENTS RIO Gui Core RIO Net Hist Graf Graf3d Gpad Tree TreePlayer Rint Postscript Matrix Physics MathCore Thread )
 
 #---Define useful ROOT functions and macros (e.g. ROOT_GENERATE_DICTIONARY)
 include(${ROOT_USE_FILE})
