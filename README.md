@@ -4,7 +4,7 @@ High Energy Physics Tools
 
 # Building 
 ## Requirements
-* cmake =< 3.7
+* cmake 
 * ROOT
 
 ## Compiling
