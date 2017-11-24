@@ -8,7 +8,7 @@ High Energy Physics Tools
 * ROOT
 
 ## Compiling
-* Load the any version of ROOT into the environmet from CMS env, $ROOTSYS/bin/thisroot.sh or cvmfs ex:
+* Load the any version of ROOT into the environmet from CMS env, $ROOTSYS/bin/thisroot.sh or cvmfs ex for lxplus7:
 ``` sh
 . /cvmfs/sft.cern.ch/lcg/contrib/gcc/4.8/x86_64-centos7-gcc48-opt/setup.sh
 . /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.10.08/x86_64-centos7-gcc48-opt/root/bin/thisroot.sh

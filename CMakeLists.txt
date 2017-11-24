@@ -25,6 +25,12 @@ file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "else\n")
 file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport ROOT_INCLUDE_PATH=${CMAKE_SOURCE_DIR}/include\n")
 file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "fi\n")
 
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "if [ -n \"$PYTHONPATH\" ] ; then\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport $PYTHONPATH=$$PYTHONPATH:${CMAKE_SOURCE_DIR}/python\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "else\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh" "\texport $PYTHONPATH=${CMAKE_SOURCE_DIR}/include\n")
+file( APPEND "${CMAKE_BINARY_DIR}/thishlib.sh"  "fi\n")
+
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 
 find_package(ROOT REQUIRED COMPONENTS RIO Gui Core Imt RIO Net Hist Graf Graf3d Gpad Tree TreePlayer Rint Postscript Matrix Physics MathCore Thread MultiProc )
