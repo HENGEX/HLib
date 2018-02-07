@@ -44,6 +44,13 @@ class Plotter(object):
             plots[key] = (value.first,value.second)
         return plots
     
+    def GetHists(self):
+        histsmap = self.plotter.GetHists()
+        hists = {}
+        for key,value in histsmap:
+            hists[key] = (value.first,value.second)
+        return hists
+    
     def SavePdf(self,filename,branch):
         self.plotter.SavePdf(filename,branch)
         
