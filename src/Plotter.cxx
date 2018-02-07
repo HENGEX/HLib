@@ -187,8 +187,8 @@ Plotter::Plotter(const Plotter &p)
 Plotter::~Plotter()
 {
    // TODO: free vectors of pointers and map
-   if (fCanvas != nullptr)
-      delete fCanvas;
+//   if (fCanvas != nullptr)
+//      delete fCanvas;
 }
 
 //______________________________________________________________________________
