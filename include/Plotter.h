@@ -35,6 +35,7 @@ protected:
    std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> fHists; // map of histograms for the stacks
    TCut fCut;                                                               // Global Cut
    Bool_t fSumw2;                                                           // error as sqrt(sum of weights)
+   Bool_t fVerbose;                                                         // flags to Verbose mode
 public:
    Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins = 100, Double_t xmin = -10.0,
            Double_t xmax = 10.0);
@@ -55,8 +56,9 @@ public:
     * \param alias category of the trees in the root files (Signal, Bgk0, Bgk1...)
     * \param filename directory to root file
     * \param weight weight to apply to all trees in the chain.
+    * \return true if file and tree was added to the chain
     */
-   void AddFile(const Char_t *alias, const Char_t *filename, Double_t weight, Long64_t nentries = TTree::kMaxEntries);
+   Int_t AddFile(const Char_t *alias, const Char_t *filename, Double_t weight, Long64_t nentries = TTree::kMaxEntries);
 
    /**
     * Method to apply a Cuts to TChain while the histograms are created.
@@ -90,6 +92,12 @@ public:
     * \param mode RECREATE or UPDATE
     */
    void SaveFile(const Char_t *rootfile, const Char_t *mode = "RECREATE");
+
+   /**
+    * Method enable/disbale verbose mode.
+    * \param status boolean to enable/disbale verbose mode.
+    */
+   void SetVerbose(Bool_t status) { fVerbose = status; }
 
    /**
     * Method to get a map of histograms in THStack objects, the key of the map is tge branch name.

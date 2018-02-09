@@ -4,6 +4,8 @@
 #include "TStyle.h"
 #include <sstream>
 
+#define HError(msg) std::cout << "\033[0;31m HLibError: \033[0m" << msg << std::endl;
+
 using namespace Harry;
 
 static UInt_t counter = 0;
@@ -165,7 +167,8 @@ void setTDRStyle()
 
 //______________________________________________________________________________
 Plotter::Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins, Double_t xmin, Double_t xmax)
-   : fBranches(branches), fNBins(bins), fXmin(xmin), fXmax(xmax), fOutput(nullptr), fTreeName(treename), fSumw2(kFALSE)
+   : fBranches(branches), fNBins(bins), fXmin(xmin), fXmax(xmax), fOutput(nullptr), fTreeName(treename), fSumw2(kFALSE),
+     fVerbose(kFALSE)
 {
    setTDRStyle();
 }
@@ -181,20 +184,31 @@ Plotter::Plotter(const Plotter &p)
    fXmax = p.fXmax;
    fOutput = p.fOutput;
    fCanvas = p.fCanvas;
+   fVerbose = p.fVerbose;
 }
 
 //______________________________________________________________________________
 Plotter::~Plotter()
 {
    // TODO: free vectors of pointers and map
-//   if (fCanvas != nullptr)
-//      delete fCanvas;
+   //   if (fCanvas != nullptr)
+   //      delete fCanvas;
 }
 
 //______________________________________________________________________________
 void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
 {
+   auto verbose=fVerbose;
+   SetVerbose(kFALSE);//I dont want to print paths found here (too much output)
    auto files = Find(path);   // getting paths for files *.root
+   SetVerbose(verbose); //restoring previous status
+   
+   if (fVerbose) {
+      std::cout << "\n---------------- HLib  AddDirectory ----------------" << std::endl;
+      std::cout << " Path = " << path << std::endl;
+      std::cout << " Weight = " << weight << std::endl;
+   }
+
    if (!fChains.count(alias)) // creating chain if dont exists
    {
       auto chain = new TChain(fTreeName.c_str());
@@ -202,22 +216,47 @@ void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
    }
 
    for (auto &file : files) // filling the chain with the files
-      fChains[alias]->AddFile(file.c_str(), TTree::kMaxEntries, fTreeName.c_str());
-   // NOTE: if you call two times this function changing the weight
-   // all the previous weights will be change for the last one.
-   fChains[alias]->SetWeight(weight);       // setting weight
-   fChains[alias]->SetBranchStatus("*", 1); // enabling all branches
+   {
+      if (!AddFile(alias, file.c_str(), weight, TTree::kMaxEntries))
+         continue; // if the file is not added continue with the next(error handler in AddFile method)
+   }
 }
 
 //______________________________________________________________________________
-void Plotter::AddFile(const char *alias, const char *filename, Double_t weight, Long64_t nentries)
+Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight, Long64_t nentries)
 {
+   if (fVerbose) {
+      std::cout << "\n---------------- HLib  AddFile ----------------" << std::endl;
+      std::cout << " File = " << filename << std::endl;
+      std::cout << " Tree = " << fTreeName.c_str() << std::endl;
+      std::cout << " Weight = " << weight << std::endl;
+   }
    if (!fChains.count(alias)) // creating chain if dont exists
    {
       auto chain = new TChain(fTreeName.c_str());
       fChains[alias] = chain;
    }
-   fChains[alias]->AddFile(filename, nentries, fTreeName.c_str());
+   if (!fChains[alias]->AddFile(
+          filename, nentries,
+          fTreeName.c_str())) // if we can not adde file (maybe corrupted or something), continue with the next file.
+   {
+      HError("can not open file " << filename);
+      return kFALSE;
+   }
+   auto cfile = fChains[alias]->GetFile(); // current file
+   if (cfile == NULL) {
+      HError("can not open chain file " << filename);
+      return kFALSE;
+   }
+
+   auto ctree = (TTree *)cfile->Get(fTreeName.c_str());
+   if (fVerbose) {
+      std::cout << " Entries = " << ctree->GetEntries() << std::endl;
+   }
+   // NOTE: every tree have a weight (not global chain weight)
+   //        ctree->SetWeight(weight);
+   fChains[alias]->SetWeight(weight, "global"); // setting weight for current tree
+   fChains[alias]->SetBranchStatus("*", 1);     // enabling all branches
 }
 
 //______________________________________________________________________________
@@ -263,6 +302,10 @@ std::pair<std::vector<TH1F *>, TLegend *> &Plotter::GetHists(const Char_t *branc
       if (!leg)
          leg = new TLegend(0.68, 0.72, 0.98, 0.92);
       auto h = (TH1F *)gROOT->FindObject(Form("%s%s", cname, lbranch.Data()));
+      if (h == NULL) {
+         HError("Can not to create " << Form("%s%s", cname, lbranch.Data()));
+         continue;
+      }
       h->SetName(Form("%s%s", cname, lbranch.Data()));
       h->SetTitle(Form("%s%s", cname, branch));
       h->SetFillColor(color);
@@ -396,12 +439,12 @@ void Plotter::SaveFile(const Char_t *rootfile, const Char_t *mode)
 //______________________________________________________________________________
 void Plotter::Print()
 {
-   std::cout << "---------------- Chains ----------------<<std::endl" << std::endl;
+   std::cout << "---------------- Chains ----------------" << std::endl;
    for (auto &chain : fChains) {
       std::cout << chain.first << std::endl;
       chain.second->Print();
    }
-   std::cout << "---------------- HStacks ----------------<<std::endl" << std::endl;
+   std::cout << "---------------- HStacks ----------------" << std::endl;
    for (auto &hstack : fHStacks) {
       std::cout << hstack.first << std::endl;
       hstack.second.first->Print();
@@ -415,7 +458,14 @@ std::vector<std::string> Plotter::Find(std::string path, std::string pattern)
    std::vector<std::string> strings;
    std::istringstream f(files.Data());
    std::string s;
+   if (fVerbose) {
+      std::cout << "---------------- ROOT Path/Files ----------------<<std::endl" << std::endl;
+      std::cout << "Path = " << path << std::endl;
+   }
    while (getline(f, s, '\n')) {
+      if (fVerbose) {
+         std::cout << "File = " << s << std::endl;
+      }
       strings.push_back(s);
    }
    return strings;
