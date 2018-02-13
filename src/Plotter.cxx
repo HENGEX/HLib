@@ -198,11 +198,11 @@ Plotter::~Plotter()
 //______________________________________________________________________________
 void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
 {
-   auto verbose=fVerbose;
-   SetVerbose(kFALSE);//I dont want to print paths found here (too much output)
+   auto verbose = fVerbose;
+   SetVerbose(kFALSE);        // I dont want to print paths found here (too much output)
    auto files = Find(path);   // getting paths for files *.root
-   SetVerbose(verbose); //restoring previous status
-   
+   SetVerbose(verbose);       // restoring previous status
+
    if (fVerbose) {
       std::cout << "\n---------------- HLib  AddDirectory ----------------" << std::endl;
       std::cout << " Path = " << path << std::endl;
@@ -230,6 +230,17 @@ Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight,
       std::cout << " File = " << filename << std::endl;
       std::cout << " Tree = " << fTreeName.c_str() << std::endl;
       std::cout << " Weight = " << weight << std::endl;
+      auto cfile = TFile::Open(filename, "READ"); // current file
+      if (cfile == NULL) {
+         HError("can not open chain file " << filename);
+         return kFALSE;
+      }
+
+      auto ctree = (TTree *)cfile->Get(fTreeName.c_str());
+      if (fVerbose) {
+         std::cout << " Entries = " << ctree->GetEntries() << std::endl;
+      }
+      cfile->Close();
    }
    if (!fChains.count(alias)) // creating chain if dont exists
    {
@@ -242,16 +253,6 @@ Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight,
    {
       HError("can not open file " << filename);
       return kFALSE;
-   }
-   auto cfile = fChains[alias]->GetFile(); // current file
-   if (cfile == NULL) {
-      HError("can not open chain file " << filename);
-      return kFALSE;
-   }
-
-   auto ctree = (TTree *)cfile->Get(fTreeName.c_str());
-   if (fVerbose) {
-      std::cout << " Entries = " << ctree->GetEntries() << std::endl;
    }
    // NOTE: every tree have a weight (not global chain weight)
    //        ctree->SetWeight(weight);
