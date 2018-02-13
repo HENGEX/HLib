@@ -220,6 +220,13 @@ void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
       if (!AddFile(alias, file.c_str(), weight, TTree::kMaxEntries))
          continue; // if the file is not added continue with the next(error handler in AddFile method)
    }
+   if (fVerbose) {
+      std::cout << "\n Total events in chains " << std::endl;
+      for (auto &chain : fChains) {
+         std::cout << "\n Chain  = " << chain.first << std::endl;
+         std::cout << " Events = " << chain.second->GetEntries() << std::endl;
+      }
+   }
 }
 
 //______________________________________________________________________________
