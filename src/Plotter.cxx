@@ -195,6 +195,7 @@ Plotter::~Plotter()
    //      delete fCanvas;
 }
 
+Int_t entries=0;
 //______________________________________________________________________________
 void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
 {
@@ -226,9 +227,9 @@ void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
          std::cout << "\n Chain  = " << chain.first << std::endl;
          std::cout << " Events = " << chain.second->GetEntries() << std::endl;
       }
+      std::cout<<"Entries sum = "<<entries<<std::endl;
    }
 }
-
 //______________________________________________________________________________
 Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight, Long64_t nentries)
 {
@@ -246,6 +247,7 @@ Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight,
       auto ctree = (TTree *)cfile->Get(fTreeName.c_str());
       if (fVerbose) {
          std::cout << " Entries = " << ctree->GetEntries() << std::endl;
+         entries+=ctree->GetEntries();
       }
       cfile->Close();
    }
@@ -254,17 +256,17 @@ Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight,
       auto chain = new TChain(fTreeName.c_str());
       fChains[alias] = chain;
    }
-   if (!fChains[alias]->AddFile(
+   auto subchain=new TChain(fTreeName.c_str());
+   if (!subchain->AddFile(
           filename, nentries,
           fTreeName.c_str())) // if we can not adde file (maybe corrupted or something), continue with the next file.
    {
       HError("can not open file " << filename);
       return kFALSE;
    }
-   // NOTE: every tree have a weight (not global chain weight)
-   //        ctree->SetWeight(weight);
-   fChains[alias]->SetWeight(weight, "global"); // setting weight for current tree
-   fChains[alias]->SetBranchStatus("*", 1);     // enabling all branches
+   subchain->SetWeight(weight);
+//    subchain->SetBranchStatus("*", 1); // enabling all branches
+   fChains[alias]->Add(subchain);     
 }
 
 //______________________________________________________________________________
