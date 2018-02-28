@@ -21,8 +21,16 @@
 
 namespace Harry {
 class Plotter : public TObject {
+private:
+    class FileInfo
+    {
+    public:
+        std::string fFilePath;
+        Double_t fWeight;
+        Long64_t fNentries;
+    };
 protected:
-   std::map<std::string, TChain *> fChains;                                 // Global chain to handle files and trees
+  std::map<std::string, TChain *> fChains;                                 // Global chain to handle files and trees
    std::map<std::string, std::pair<THStack *, TLegend *>> fHStacks;         // stack to plot multiple histograms
    std::vector<std::string> fBranches;                                      // branches to be plotted
    UInt_t fNBins;                                                           // number of bins in histograms
@@ -32,10 +40,13 @@ protected:
    TCanvas *fCanvas;                                                        //! Global canvas to draw
    std::string fTreeName;                                                   // Global Tree name
    std::map<std::string, TCut> fCuts;                                       // Cuts to apply
-   std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> fHists; // map of histograms for the stacks
+   std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> fStacksHists; // map of histograms for the stacks
    TCut fCut;                                                               // Global Cut
    Bool_t fSumw2;                                                           // error as sqrt(sum of weights)
    Bool_t fVerbose;                                                         // flags to Verbose mode
+   std::map<std::string,std::vector<FileInfo>>                       fFileInfo;//information for every file
+   std::map<std::string,std::map<std::string,TH1F*>>                 fHists;//histograms ['alias']['branch'] where alias is by ex: Signal.
+   std::map<std::string,TLegend *>                                   fLegends; //branch,legend
 public:
    Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins = 100, Double_t xmin = -10.0,
            Double_t xmax = 10.0);
@@ -114,11 +125,13 @@ public:
 
    void Print();
 
-protected:
+// protected:
    /**
     * Method to get a pair of histograms in a vector and the second element of the pair is the legend.
     */
-   std::pair<std::vector<TH1F *>, TLegend *> &GetHists(const Char_t *branch);
+//    std::pair<std::vector<TH1F *>, TLegend *> &GetHists(const Char_t *branch);
+   std::map<std::string,std::map<std::string,TH1F*>>& GetHists(const Char_t *branch);
+   
    void SavePdf(const Char_t *filename, const Char_t *branch);
    std::vector<std::string> Find(std::string path, std::string pattern = "*.root");
    ClassDef(Plotter, 0);

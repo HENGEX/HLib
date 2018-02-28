@@ -210,25 +210,19 @@ void Plotter::AddDirectory(const char *path, const char *alias, Double_t weight)
       std::cout << " Weight = " << weight << std::endl;
    }
 
-   if (!fChains.count(alias)) // creating chain if dont exists
-   {
-      auto chain = new TChain(fTreeName.c_str());
-      fChains[alias] = chain;
-   }
-
    for (auto &file : files) // filling the chain with the files
    {
       if (!AddFile(alias, file.c_str(), weight, TTree::kMaxEntries))
          continue; // if the file is not added continue with the next(error handler in AddFile method)
    }
-   if (fVerbose) {
-      std::cout << "\n Total events in chains " << std::endl;
-      for (auto &chain : fChains) {
-         std::cout << "\n Chain  = " << chain.first << std::endl;
-         std::cout << " Events = " << chain.second->GetEntries() << std::endl;
-      }
-      std::cout<<"Entries sum = "<<entries<<std::endl;
-   }
+//    if (fVerbose) {
+//       std::cout << "\n Total events in chains " << std::endl;
+//       for (auto &chain : fChains) {
+//          std::cout << "\n Chain  = " << chain.first << std::endl;
+//          std::cout << " Events = " << chain.second->GetEntries() << std::endl;
+//       }
+//       std::cout<<"Entries sum = "<<entries<<std::endl;
+//    }
 }
 //______________________________________________________________________________
 Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight, Long64_t nentries)
@@ -251,22 +245,22 @@ Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight,
       }
       cfile->Close();
    }
-   if (!fChains.count(alias)) // creating chain if dont exists
-   {
-      auto chain = new TChain(fTreeName.c_str());
-      fChains[alias] = chain;
-   }
-   auto subchain=new TChain(fTreeName.c_str());
-   if (!subchain->AddFile(
-          filename, nentries,
-          fTreeName.c_str())) // if we can not adde file (maybe corrupted or something), continue with the next file.
-   {
-      HError("can not open file " << filename);
-      return kFALSE;
-   }
-   subchain->SetWeight(weight);
-//    subchain->SetBranchStatus("*", 1); // enabling all branches
-   fChains[alias]->Add(subchain);     
+   std::vector<FileInfo> info;
+   if(fFileInfo.count( alias ))
+      info = fFileInfo[alias];
+   else
+       fFileInfo[alias] = info;
+    
+   FileInfo file;
+   file.fFilePath = filename;
+   file.fWeight = weight;
+   file.fNentries = nentries;
+   
+   info.push_back(file);
+   
+   fFileInfo[alias] = info;
+   
+   return kTRUE;
 }
 
 //______________________________________________________________________________
@@ -275,70 +269,116 @@ std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> &Plotter::GetHi
    for (auto &branch : fBranches) {
       GetHists(branch.c_str());
    }
-   return fHists;
+   return fStacksHists;
 }
 
 //______________________________________________________________________________
-std::pair<std::vector<TH1F *>, TLegend *> &Plotter::GetHists(const Char_t *branch)
+// std::pair<std::vector<TH1F *>, TLegend *> &Plotter::GetHists(const Char_t *branch)
+std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_t *branch)
 {
    auto color = 2;
-   std::vector<TH1F *> hists;
-   TLegend *leg = nullptr;
-   for (auto &chain : fChains) {
-      auto cname = chain.first.c_str();
-      // TODO: check if branch or leaf exists
-      //             if(chain.second->GetBranch(branch)==nullptr)
-      //             {
-      //                 Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Branch %s not found
-      //                 omitting...",branch);
-      //                 continue;//branch dont exists, omitting and continue to the next branch
-      //             }
-      //             if(chain.second->GetLeaf(branch)==nullptr)
-      //             {
-      //                 Error(Form("%s::%s(%d)",__FILE__,__FUNCTION__,__LINE__),"Leaf %s not found
-      //                 omitting...",branch);
-      //                 continue;//branch dont exists, omitting and continue to the next branch
-      //             }
+//    std::vector<TH1F *> hists;
+   TLegend *leg = nullptr;// new TLegend(0.68, 0.72, 0.98, 0.92);
+   for (auto &files : fFileInfo) {
+      auto cname = files.first.c_str();
 
       TCut cuts = "";
       if (fCuts.count(cname))
          cuts = fCuts[cname];
       TString lbranch = branch;
       lbranch = lbranch.ReplaceAll(")", "").ReplaceAll("(", "");
-      chain.second->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),
-                         cuts && fCut, "goff");
-      //             if(!fHists.count(branch))//if histograms are not created
-      //             {
-      if (!leg)
-         leg = new TLegend(0.68, 0.72, 0.98, 0.92);
-      auto h = (TH1F *)gROOT->FindObject(Form("%s%s", cname, lbranch.Data()));
-      if (h == NULL) {
-         HError("Can not to create " << Form("%s%s", cname, lbranch.Data()));
-         continue;
+      
+      TH1F *hist=nullptr;
+      
+      
+      if(fHists.count(cname)) // if the alias exists (Signal, Bgk0 ..)
+      {
+        auto hmap = fHists[cname];
+        if(hmap.count(branch)) //getting histogram if exists
+        {
+            hist=hmap[branch]; 
+        }else//creating an histogram if dont exists
+        {
+            auto name=Form("%s%s", cname, branch);
+            hist=new TH1F(name,name, fNBins, fXmin, fXmax);
+            hmap[branch]=hist;
+            hist->SetFillColor(color);
+            hist->SetLineColor(color);
+            // error as sqrt(sum of weights)
+            if (fSumw2)
+                hist->Sumw2(); // to compute the error on the weights
+            fHists[cname]=hmap;
+        }
+      }else{ //creating entries if alias dont exists
+           auto name=Form("%s%s", cname, branch);
+           hist=new TH1F(name,name, fNBins, fXmin, fXmax);
+           std::map<std::string,TH1F*> hmap;
+           hmap[branch]=hist;
+           hist->SetFillColor(color);
+           hist->SetLineColor(color);
+           // error as sqrt(sum of weights)
+           if (fSumw2)
+               hist->Sumw2(); // to compute the error on the weights
+         
+            fHists[cname]=hmap;
       }
-      h->SetName(Form("%s%s", cname, lbranch.Data()));
-      h->SetTitle(Form("%s%s", cname, branch));
-      h->SetFillColor(color);
-      h->SetLineColor(color);
-      // error as sqrt(sum of weights)
-      if (fSumw2)
-         h->Sumw2(); // to compute the error on the weights
-      hists.push_back(h);
-      leg->AddEntry(h, cname, "l");
-      //             }else{
-      //                 leg=fHists[branch].second;
-      //             }
+      
+      //filling the histogram given an alias, branch, weight,tree name and  root file.
+      //all files was added previously with the method AddFile of AddDirectory
+      for(auto &file:fFileInfo[cname]) 
+      {
+            auto tfile=TFile::Open(file.fFilePath.c_str(),"READ");
+            auto tree=(TTree*)tfile->Get(fTreeName.c_str());
+            auto w=Form("%f",file.fWeight);
+//             std::cout<<"BNAME = "<<hist->GetName()<<std::endl;
+//             std::cout<<"branch = "<<branch<<std::endl;
+            TString lbranch = branch;
+            lbranch = lbranch.ReplaceAll(")", "").ReplaceAll("(", "");
+            
+            tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && cuts && fCut , "goff");
+            auto h = (TH1F *)gROOT->FindObject(Form("tmp%s%s", cname, lbranch.Data()));
+            gStyle->SetOptStat(1);
+// //             h->SetStats(1);
+// //             h->Draw("hist");
+            hist->Add(h);
+            delete h;
+      }
+//       hist->SetStats(1);
+//       hist->Draw();
+//       files.second->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),
+//                          cuts && fCut, "goff");
+//       //             if(!fHists.count(branch))//if histograms are not created
+//       //             {
+//       if (!leg)
+//          leg 
+//       if (h == NULL) {
+//          HError("Can not to create " << Form("%s%s", cname, lbranch.Data()));
+//          continue;
+//       }
+//       h->SetName(Form("%s%s", cname, lbranch.Data()));
+//       h->SetTitle(Form("%s%s", cname, branch));
+//       h->SetFillColor(color);
+//       h->SetLineColor(color);
+//       // error as sqrt(sum of weights)
+//       if (fSumw2)
+//          h->Sumw2(); // to compute the error on the weights
+//       hists.push_back(h);
+//       leg->AddEntry(h, cname, "l");
+//       //             }else{
+//       //                 leg=fHists[branch].second;
+//       //             }
 
       color++;
    }
-   fHists[branch] = std::pair<std::vector<TH1F *>, TLegend *>(hists, leg);
-   return fHists[branch];
+//    fStacksHists[branch] = std::pair<std::vector<TH1F *>, TLegend *>(hists, leg);
+//    return fStacksHists[branch];
+return fHists;
 }
 
 //______________________________________________________________________________
 std::pair<THStack *, TLegend *> &Plotter::GetHStack(const Char_t *branch)
 {
-   if (!fHists.count(branch)) // if histograms are not created
+   if (!fStacksHists.count(branch)) // if histograms are not created
    {
       GetHists(branch);
    }
@@ -357,12 +397,12 @@ std::pair<THStack *, TLegend *> &Plotter::GetHStack(const Char_t *branch)
 
       auto hstack = new THStack(Form("PlotterStack%s", branch),
                                 Form("Plotter Stack Branch=%s Aliases=%s", branch, aliasnames.c_str()));
-      fHStacks[branch] = std::pair<THStack *, TLegend *>(hstack, fHists[branch].second);
+      fHStacks[branch] = std::pair<THStack *, TLegend *>(hstack, fStacksHists[branch].second);
    } else { // if exists just return the object;
       return fHStacks[branch];
    }
 
-   for (auto &hist : fHists[branch].first) {
+   for (auto &hist : fStacksHists[branch].first) {
       fHStacks[branch].first->Add(hist);
    }
    //     fHStacks[branch].second=fHists[branch].second;
@@ -433,13 +473,13 @@ void Plotter::SaveFile(const Char_t *rootfile, const Char_t *mode)
       TDirectory *branch = fOutput->mkdir(plot.first.c_str());
       branch->cd();
       auto hs = new THStack(plot.second.first->GetName(), plot.second.first->GetTitle());
-      for (auto &hist : fHists[plot.first.c_str()].first) {
+      for (auto &hist : fStacksHists[plot.first.c_str()].first) {
          auto h = (TH1F *)hist->Clone();
          h->Write();
          hs->Add(h);
       }
       hs->Write(); // hstack
-      fHists[plot.first.c_str()].second->Write();
+      fStacksHists[plot.first.c_str()].second->Write();
       // plot.second.second->Write();//Legend
    }
    //    fCut.Write("cuts");
