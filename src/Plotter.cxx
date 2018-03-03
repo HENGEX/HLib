@@ -266,10 +266,20 @@ Int_t Plotter::AddFile(const char *alias, const char *filename, Double_t weight,
 //______________________________________________________________________________
 std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> &Plotter::GetHists()
 {
-   for (auto &branch : fBranches) {
-      GetHists(branch.c_str());
-   }
-   return fStacksHists;
+    if(fStacksHists.empty()){
+            for (auto &branch : fBranches) {
+                
+                auto hists=GetHists(branch.c_str());
+                std::vector<TH1F*> v;
+                for(auto &hist:fHists)
+                {
+                    v.push_back(hist.second[branch.c_str()]);
+                }
+                fStacksHists[branch]=std::pair<std::vector<TH1F *>, TLegend *>(v,fLegends[branch]);
+           }
+    }else{
+        return fStacksHists;
+    }
 }
 
 //______________________________________________________________________________
@@ -278,7 +288,6 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
 {
    auto color = 2;
 //    std::vector<TH1F *> hists;
-   TLegend *leg = nullptr;// new TLegend(0.68, 0.72, 0.98, 0.92);
    for (auto &files : fFileInfo) {
       auto cname = files.first.c_str();
 
@@ -289,6 +298,7 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
       lbranch = lbranch.ReplaceAll(")", "").ReplaceAll("(", "");
       
       TH1F *hist=nullptr;
+      
       
       
       if(fHists.count(cname)) // if the alias exists (Signal, Bgk0 ..)
@@ -308,6 +318,8 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             if (fSumw2)
                 hist->Sumw2(); // to compute the error on the weights
             fHists[cname]=hmap;
+            color++;
+
         }
       }else{ //creating entries if alias dont exists
            auto name=Form("%s%s", cname, branch);
@@ -321,6 +333,7 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
                hist->Sumw2(); // to compute the error on the weights
          
             fHists[cname]=hmap;
+            color++;
       }
       
       //filling the histogram given an alias, branch, weight,tree name and  root file.
@@ -330,46 +343,34 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             auto tfile=TFile::Open(file.fFilePath.c_str(),"READ");
             auto tree=(TTree*)tfile->Get(fTreeName.c_str());
             auto w=Form("%f",file.fWeight);
-//             std::cout<<"BNAME = "<<hist->GetName()<<std::endl;
-//             std::cout<<"branch = "<<branch<<std::endl;
             TString lbranch = branch;
             lbranch = lbranch.ReplaceAll(")", "").ReplaceAll("(", "");
             
             tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && cuts && fCut , "goff");
             auto h = (TH1F *)gROOT->FindObject(Form("tmp%s%s", cname, lbranch.Data()));
             gStyle->SetOptStat(1);
-// //             h->SetStats(1);
-// //             h->Draw("hist");
             hist->Add(h);
             delete h;
       }
-//       hist->SetStats(1);
-//       hist->Draw();
-//       files.second->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),
-//                          cuts && fCut, "goff");
-//       //             if(!fHists.count(branch))//if histograms are not created
-//       //             {
-//       if (!leg)
-//          leg 
-//       if (h == NULL) {
-//          HError("Can not to create " << Form("%s%s", cname, lbranch.Data()));
-//          continue;
-//       }
-//       h->SetName(Form("%s%s", cname, lbranch.Data()));
-//       h->SetTitle(Form("%s%s", cname, branch));
-//       h->SetFillColor(color);
-//       h->SetLineColor(color);
-//       // error as sqrt(sum of weights)
-//       if (fSumw2)
-//          h->Sumw2(); // to compute the error on the weights
-//       hists.push_back(h);
-//       leg->AddEntry(h, cname, "l");
-//       //             }else{
-//       //                 leg=fHists[branch].second;
-//       //             }
-
-      color++;
    }
+   
+    TLegend *leg = nullptr;
+    //creating legends
+    if(fLegends.count(branch)) // if the branch exists 
+    {
+          leg=fLegends[branch];
+    }else{
+          leg = new TLegend(0.68, 0.72, 0.98, 0.92);
+    }
+    //filling the Legend
+    for (auto &hist : fHists) {
+      auto cname = hist.first.c_str();
+      auto h=hist.second[branch];
+      leg->AddEntry(h, cname, "l");
+    }
+   fLegends[branch]=leg;
+   
+
 //    fStacksHists[branch] = std::pair<std::vector<TH1F *>, TLegend *>(hists, leg);
 //    return fStacksHists[branch];
 return fHists;
@@ -378,17 +379,15 @@ return fHists;
 //______________________________________________________________________________
 std::pair<THStack *, TLegend *> &Plotter::GetHStack(const Char_t *branch)
 {
-   if (!fStacksHists.count(branch)) // if histograms are not created
-   {
-      GetHists(branch);
-   }
 
    if (!fHStacks.count(branch)) // creating hstack if dont exists
    {
+      GetHists(branch);
+      
       std::string aliasnames = "( ";
       std::vector<std::string> aliases;
-      for (auto &chain : fChains) {
-         auto name = chain.first;
+      for (auto &hist: fHists) {
+         auto name = hist.first;
          aliases.push_back(name);
          aliasnames += name;
          aliasnames += " ";
@@ -397,16 +396,14 @@ std::pair<THStack *, TLegend *> &Plotter::GetHStack(const Char_t *branch)
 
       auto hstack = new THStack(Form("PlotterStack%s", branch),
                                 Form("Plotter Stack Branch=%s Aliases=%s", branch, aliasnames.c_str()));
-      fHStacks[branch] = std::pair<THStack *, TLegend *>(hstack, fStacksHists[branch].second);
+      for (auto &hist: fHists) {
+          hstack->Add(hist.second[branch]); 
+      }      
+      fHStacks[branch] = std::pair<THStack *, TLegend *>(hstack, fLegends[branch]);
+      return fHStacks[branch];
    } else { // if exists just return the object;
       return fHStacks[branch];
    }
-
-   for (auto &hist : fStacksHists[branch].first) {
-      fHStacks[branch].first->Add(hist);
-   }
-   //     fHStacks[branch].second=fHists[branch].second;
-   return fHStacks[branch];
 }
 
 //______________________________________________________________________________
