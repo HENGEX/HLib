@@ -357,6 +357,7 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             gStyle->SetOptStat(1);
             hist->Add(h);
             delete h;
+            tfile->Close();
       }
    }
    
