@@ -470,6 +470,7 @@ void Plotter::SavePdf(const Char_t *filename, const Char_t *branch)
 void Plotter::SaveFile(const Char_t *rootfile, const Char_t *mode)
 {
    fOutput = new TFile(rootfile, mode);
+   auto hists = GetHists();
    auto plots = GetPlots();
    for (auto &plot : plots) {
       TDirectory *branch = fOutput->mkdir(plot.first.c_str());
