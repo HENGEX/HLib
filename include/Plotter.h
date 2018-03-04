@@ -87,6 +87,11 @@ public:
    void SetCut(TCut cut);
 
    /**
+    * Method to enable CMS style code.
+    */
+   void SetTDRStyle();
+
+   /**
     * Method to enable error as sqrt(sum of weights) while the histograms are created.
     */
    void SetSumw2() { fSumw2 = kTRUE; }

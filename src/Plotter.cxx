@@ -167,10 +167,10 @@ void setTDRStyle()
 
 //______________________________________________________________________________
 Plotter::Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins, Double_t xmin, Double_t xmax)
-   : fBranches(branches), fNBins(bins), fXmin(xmin), fXmax(xmax), fOutput(nullptr), fTreeName(treename), fSumw2(kFALSE),
+   : fBranches(branches), fNBins(bins), fXmin(xmin), fXmax(xmax), fOutput(nullptr), fTreeName(treename),fStacksHists(), fSumw2(kFALSE),
      fVerbose(kFALSE)
 {
-   setTDRStyle();
+   
 }
 
 //______________________________________________________________________________
@@ -185,6 +185,12 @@ Plotter::Plotter(const Plotter &p)
    fOutput = p.fOutput;
    fCanvas = p.fCanvas;
    fVerbose = p.fVerbose;
+}
+
+//______________________________________________________________________________
+void Plotter::SetTDRStyle()
+{
+    setTDRStyle();
 }
 
 //______________________________________________________________________________
@@ -268,7 +274,6 @@ std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> &Plotter::GetHi
 {
     if(fStacksHists.empty()){
             for (auto &branch : fBranches) {
-                
                 auto hists=GetHists(branch.c_str());
                 std::vector<TH1F*> v;
                 for(auto &hist:fHists)
@@ -277,6 +282,7 @@ std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> &Plotter::GetHi
                 }
                 fStacksHists[branch]=std::pair<std::vector<TH1F *>, TLegend *>(v,fLegends[branch]);
            }
+        return fStacksHists;
     }else{
         return fStacksHists;
     }
@@ -356,19 +362,17 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
    
     TLegend *leg = nullptr;
     //creating legends
-    if(fLegends.count(branch)) // if the branch exists 
+    if(!fLegends.count(branch)) // if the branch exists 
     {
-          leg=fLegends[branch];
-    }else{
-          leg = new TLegend(0.68, 0.72, 0.98, 0.92);
+        leg = new TLegend(0.68, 0.72, 0.98, 0.92);
+        //filling the Legend
+        for (auto &hist : fHists) {
+            auto cname = hist.first.c_str();
+            auto h=hist.second[branch];
+            leg->AddEntry(h, cname, "l");
+        }
+        fLegends[branch]=leg;
     }
-    //filling the Legend
-    for (auto &hist : fHists) {
-      auto cname = hist.first.c_str();
-      auto h=hist.second[branch];
-      leg->AddEntry(h, cname, "l");
-    }
-   fLegends[branch]=leg;
    
 
 //    fStacksHists[branch] = std::pair<std::vector<TH1F *>, TLegend *>(hists, leg);
