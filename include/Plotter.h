@@ -30,7 +30,6 @@ private:
         Long64_t fNentries;
     };
 protected:
-  std::map<std::string, TChain *> fChains;                                 // Global chain to handle files and trees
    std::map<std::string, std::pair<THStack *, TLegend *>> fHStacks;         // stack to plot multiple histograms ['branch']
    std::vector<std::string> fBranches;                                      // branches to be plotted
    UInt_t fNBins;                                                           // number of bins in histograms

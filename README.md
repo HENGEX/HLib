@@ -41,3 +41,13 @@ source thishlib.sh
 Tool to create plots from different files in multiples paths,
 you can map the TTrees objects in chains and create histograms for multiples categories(Signal, Background0, etc..)
 for the same branch.
+
+# Mounting EOS filesystem at HOME
+``` sh
+export EOS_MGM_URL=root://eoscms.cern.ch
+export EOS_FUSE_MGM_ALIAS=eoscms.cern.ch
+mkdir ~/eos
+eos fuse mount ~/eos/
+
+```
+Wiki at [https://twiki.cern.ch/twiki/bin/view/EOS/AccessingEosNotUsingLxplus](https://twiki.cern.ch/twiki/bin/view/EOS/AccessingEosNotUsingLxplus)

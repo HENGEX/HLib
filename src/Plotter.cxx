@@ -27,7 +27,31 @@ void fixOverlay()
 
 void setTDRStyle()
 {
+}
 
+//______________________________________________________________________________
+Plotter::Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins, Double_t xmin, Double_t xmax)
+   : fBranches(branches), fNBins(bins), fXmin(xmin), fXmax(xmax), fOutput(nullptr), fTreeName(treename), fStacksHists(),
+     fSumw2(kFALSE), fVerbose(kFALSE)
+{
+}
+
+//______________________________________________________________________________
+Plotter::Plotter(const Plotter &p)
+{
+   fHStacks = p.fHStacks;
+   fBranches = p.fBranches;
+   fNBins = p.fNBins;
+   fXmin = p.fXmin;
+   fXmax = p.fXmax;
+   fOutput = p.fOutput;
+   fCanvas = p.fCanvas;
+   fVerbose = p.fVerbose;
+}
+
+//______________________________________________________________________________
+void Plotter::SetTDRStyle()
+{
    // For the canvas:
    tdrStyle->SetCanvasBorderMode(0);
    tdrStyle->SetCanvasColor(kWhite);
@@ -163,34 +187,6 @@ void setTDRStyle()
    // gROOT->ForceStyle();  // Try this if stuff doesn't work right
 
    tdrStyle->cd();
-}
-
-//______________________________________________________________________________
-Plotter::Plotter(std::string treename, std::vector<std::string> branches, UInt_t bins, Double_t xmin, Double_t xmax)
-   : fBranches(branches), fNBins(bins), fXmin(xmin), fXmax(xmax), fOutput(nullptr), fTreeName(treename),fStacksHists(), fSumw2(kFALSE),
-     fVerbose(kFALSE)
-{
-   
-}
-
-//______________________________________________________________________________
-Plotter::Plotter(const Plotter &p)
-{
-   fChains = p.fChains;
-   fHStacks = p.fHStacks;
-   fBranches = p.fBranches;
-   fNBins = p.fNBins;
-   fXmin = p.fXmin;
-   fXmax = p.fXmax;
-   fOutput = p.fOutput;
-   fCanvas = p.fCanvas;
-   fVerbose = p.fVerbose;
-}
-
-//______________________________________________________________________________
-void Plotter::SetTDRStyle()
-{
-    setTDRStyle();
 }
 
 //______________________________________________________________________________
@@ -492,11 +488,6 @@ void Plotter::SaveFile(const Char_t *rootfile, const Char_t *mode)
 //______________________________________________________________________________
 void Plotter::Print()
 {
-   std::cout << "---------------- Chains ----------------" << std::endl;
-   for (auto &chain : fChains) {
-      std::cout << chain.first << std::endl;
-      chain.second->Print();
-   }
    std::cout << "---------------- HStacks ----------------" << std::endl;
    for (auto &hstack : fHStacks) {
       std::cout << hstack.first << std::endl;
