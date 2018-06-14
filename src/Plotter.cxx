@@ -348,7 +348,7 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             TString lbranch = branch;
             lbranch = lbranch.ReplaceAll(")", "").ReplaceAll("(", "");
             
-            tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax)*w, cuts && fCut , "goff");
+            tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax), fCut*w , "goff");
             auto h = (TH1F *)gROOT->FindObject(Form("tmp%s%s", cname, lbranch.Data()));
             gStyle->SetOptStat(1);
             hist->Add(h);
