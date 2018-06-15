@@ -358,7 +358,11 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             if(fCut=="" && cuts!="")
             {
                 tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && cuts , "goff");
-            }                
+            }
+            if(fCut=="" && cuts=="")
+            {
+                tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w, "goff");
+            }
             auto h = (TH1F *)gROOT->FindObject(Form("tmp%s%s", cname, lbranch.Data()));
             gStyle->SetOptStat(1);
             hist->Add(h);
