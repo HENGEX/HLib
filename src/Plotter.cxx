@@ -347,8 +347,18 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             auto w=Form("%f",file.fWeight);
             TString lbranch = branch;
             lbranch = lbranch.ReplaceAll(")", "").ReplaceAll("(", "");
-            
-            tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && cuts && fCut , "goff");
+            if(cuts!="" && fCut!="")
+            {
+                tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && cuts && fCut , "goff");
+            }
+            if(fCut!="" && cuts=="")
+            {
+                tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && fCut , "goff");                
+            }
+            if(fCut=="" && cuts!="")
+            {
+                tree->Draw(Form("%s>>%s(%d,%f,%f)", branch, Form("tmp%s%s", cname, lbranch.Data()), fNBins, fXmin, fXmax),w && cuts , "goff");
+            }                
             auto h = (TH1F *)gROOT->FindObject(Form("tmp%s%s", cname, lbranch.Data()));
             gStyle->SetOptStat(1);
             hist->Add(h);
