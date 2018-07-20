@@ -3,6 +3,7 @@
 #include <TSystem.h>
 #include "TStyle.h"
 #include <sstream>
+#include <TRandom.h>
 
 #define HError(msg) std::cout << "\033[0;31m HLibError: \033[0m" << msg << std::endl;
 
@@ -180,11 +181,13 @@ void Plotter::SetTDRStyle()
    // tdrStyle->SetBarOffset(Float_t baroff = 0.5);
    // tdrStyle->SetBarWidth(Float_t barwidth = 0.5);
    // tdrStyle->SetPaintTextFormat(const char* format = "g");
-   // tdrStyle->SetPalette(Int_t ncolors = 0, Int_t* colors = 0);
+   //tdrStyle->SetPalette(Int_t ncolors = 0, Int_t* colors = 0);
+   //tdrStyle->SetPalette(88);
+
    // tdrStyle->SetTimeOffset(Double_t toffset);
    // tdrStyle->SetHistMinimumZero(kTRUE);
 
-   // gROOT->ForceStyle();  // Try this if stuff doesn't work right
+   //gROOT->ForceStyle();  // Try this if stuff doesn't work right
 
    tdrStyle->cd();
 }
@@ -288,8 +291,9 @@ std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> &Plotter::GetHi
 // std::pair<std::vector<TH1F *>, TLegend *> &Plotter::GetHists(const Char_t *branch)
 std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_t *branch)
 {
-   auto color = 2;
-//    std::vector<TH1F *> hists;
+  Int_t colors[]={2,3,596,401,429,8,9,46,38,30,800,807,611,40,15};
+  Int_t color = 0;
+  //    std::vector<TH1F *> hists;
    for (auto &files : fFileInfo) {
       auto cname = files.first.c_str();
 
@@ -314,28 +318,29 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
             auto name=Form("%s%s", cname, branch);
             hist=new TH1F(name,name, fNBins, fXmin, fXmax);
             hmap[branch]=hist;
-            hist->SetFillColor(color);
-            hist->SetLineColor(color);
+            hist->SetFillColor(colors[color]);
+            hist->SetLineColor(colors[color]);
             // error as sqrt(sum of weights)
             if (fSumw2)
                 hist->Sumw2(); // to compute the error on the weights
             fHists[cname]=hmap;
             color++;
-
+	    if(color>sizeof(colors)/ sizeof(Int_t)) color=0;//To not go out of the colors definition
         }
       }else{ //creating entries if alias dont exists
            auto name=Form("%s%s", cname, branch);
            hist=new TH1F(name,name, fNBins, fXmin, fXmax);
            std::map<std::string,TH1F*> hmap;
            hmap[branch]=hist;
-           hist->SetFillColor(color);
-           hist->SetLineColor(color);
+           hist->SetFillColor(colors[color]);
+           hist->SetLineColor(colors[color]);
            // error as sqrt(sum of weights)
            if (fSumw2)
                hist->Sumw2(); // to compute the error on the weights
          
             fHists[cname]=hmap;
-            color++;
+	    color++;
+	    if(color>sizeof(colors)/ sizeof(Int_t)) color=0;//To not go out of the colors definition
       }
       
       //filling the histogram given an alias, branch, weight,tree name and  root file.
