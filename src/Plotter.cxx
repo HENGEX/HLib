@@ -366,7 +366,9 @@ std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_
         for (auto &hist : fHists) {
             auto cname = hist.first.c_str();
             auto h=hist.second[branch];
-            leg->AddEntry(h, cname, "l");
+            //leg->AddEntry(h, cname, "l");
+            //leg->AddEntry(h, cname, "lep");
+            leg->AddEntry(h, cname, "f");           
         }
         fLegends[branch]=leg;
     }
