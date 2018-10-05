@@ -291,7 +291,10 @@ std::map<std::string, std::pair<std::vector<TH1F *>, TLegend *>> &Plotter::GetHi
 // std::pair<std::vector<TH1F *>, TLegend *> &Plotter::GetHists(const Char_t *branch)
 std::map<std::string,std::map<std::string,TH1F*>>& Plotter::GetHists(const Char_t *branch)
 {
-  Int_t colors[]={2,3,596,401,429,8,9,46,38,30,800,807,611,40,15};
+  Int_t colors[] = {632, 416, 600, 400, 616, 432, 800, 820, 840, 860, 880, 900,
+                          622, 406, 590, 390, 606, 422, 790, 810, 830, 850, 870, 890,
+                          636, 422, 604, 404, 620, 436, 804, 824, 844, 864, 884, 904};
+  //Int_t colors[]={2,3,596,401,429,8,9,46,38,30,800,807,611,40,15};
   Int_t color = 0;
   //    std::vector<TH1F *> hists;
    for (auto &files : fFileInfo) {
